@@ -25,6 +25,7 @@
 %%% This is the user interface for the Erlsom functions.
 
 -module(erlsom).
+-compile([{parse_transform, lager_transform}]).
 
 %% user interface
 -export([compile/1, compile/2, compile/3,
@@ -246,7 +247,9 @@ scan2(Xml, State, Options) ->
                                       Options) of
     {error, Message} -> {error, Message};
     {'EXIT', Message} -> throw({'EXIT', Message});
-    {ok, Structure, Tail} -> {ok, Structure, Tail}
+    {ok, Structure, Tail} -> 
+          lager:debug("_251:~n\t~p~n\t~p",[Structure,Tail]),
+          {ok, Structure, Tail}
   end.
 
 

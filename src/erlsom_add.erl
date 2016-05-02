@@ -33,9 +33,12 @@
 %%% updates the alternatives for all 'any' types in the model.
 
 -module(erlsom_add).
+-compile([{parse_transform, lager_transform}]).
+
 -export([add/3]).
 -export([add_xsd_model/1]).
 -export([add_model/2]).
+-export([init_model/0]).
 
 -include("erlsom_parse.hrl").
 -include("erlsom_compile.hrl").
@@ -49,6 +52,9 @@
 %% -record(el, {alts, mn = 1, mx = 1, nr}).
 
 %% Returns the new #model.
+init_model()->
+    #model{}.
+
 add(Xsd, Options, Model1) ->
   {ok, Model2} = erlsom:compile_xsd(Xsd, Options),
   add_model(Model1, Model2).
@@ -58,24 +64,24 @@ add_xsd_model(Model1) ->
 
 add_model(Model1 = #model{tps = Tps, nss = Nss, tns = Tns, th = Th}, 
           _Model2 = #model{tps = NewTps, nss = NewNss, th = NewTh}) ->
-  [Document | OtherTypes] = Tps,
-  #type{nm = '_document', els = [Element]} = Document,
-  #el{alts = Alts} = Element,
+    [Document | OtherTypes] = Tps,
+    #type{nm = '_document', els = [Element]} = Document,
+    #el{alts = Alts} = Element,
+    lager:debug("_68:~n\t~p",[NewTps]),
+    [New_Document | OtherNewTypes] = NewTps,
+    #type{nm = '_document', els = [NewElement]} = New_Document,
+    #el{alts = NewAlts} = NewElement,
 
-  [New_Document | OtherNewTypes] = NewTps,
-  #type{nm = '_document', els = [NewElement]} = New_Document,
-  #el{alts = NewAlts} = NewElement,
+    CombinedAlts = lists:umerge(lists:usort(Alts), lists:usort(NewAlts)),
+    CombinedElement = Element#el{alts = CombinedAlts},
+    CombinedDocument = Document#type{els = [CombinedElement]},
+    CombinedTypes = [CombinedDocument | lists:umerge(lists:usort(OtherTypes), lists:usort(OtherNewTypes))],
+    CombinedNss = lists:umerge(lists:usort(Nss), lists:usort(NewNss)),
+    CombinedTh = lists:umerge(lists:usort(Th), lists:usort(NewTh)),
 
-  CombinedAlts = lists:umerge(lists:usort(Alts), lists:usort(NewAlts)),
-  CombinedElement = Element#el{alts = CombinedAlts},
-  CombinedDocument = Document#type{els = [CombinedElement]},
-  CombinedTypes = [CombinedDocument | lists:umerge(lists:usort(OtherTypes), lists:usort(OtherNewTypes))],
-  CombinedNss = lists:umerge(lists:usort(Nss), lists:usort(NewNss)),
-  CombinedTh = lists:umerge(lists:usort(Th), lists:usort(NewTh)),
+    Info = #schemaInfo{namespaces = CombinedNss, targetNamespace = Tns},
 
-  Info = #schemaInfo{namespaces = CombinedNss, targetNamespace = Tns},
+    UpdatedTypes = erlsom_pass2:pass5(CombinedTypes, Info),
 
-  UpdatedTypes = erlsom_pass2:pass5(CombinedTypes, Info),
-
-  Model1#model{tps = UpdatedTypes, nss = CombinedNss, th = CombinedTh}.
+    Model1#model{tps = UpdatedTypes, nss = CombinedNss, th = CombinedTh}.
 
