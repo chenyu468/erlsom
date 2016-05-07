@@ -228,14 +228,15 @@ scan(Xml, Model) ->
   scan(Xml, Model, []).
 
 scan(Xml, #model{value_fun = ValFun} = Model, Options) ->
-  State = #state{model=Model, namespaces=[], value_fun = ValFun},
-  case lists:keysearch(acc, 1, Options) of
-    {value, {_, Acc}} -> 
-      scan2(Xml, State#state{value_acc = Acc},
-            lists:keydelete(acc, 1, Options));
-    false -> 
-      scan2(Xml, State, Options)
-  end.
+    State = #state{model=Model, namespaces=[], value_fun = ValFun},
+    case lists:keysearch(acc, 1, Options) of
+        {value, {_, Acc}} -> 
+            scan2(Xml, State#state{value_acc = Acc},
+                  lists:keydelete(acc, 1, Options));
+        false -> 
+            lager:debug("_237:~n\t~p",[Xml]),
+            scan2(Xml, State, Options)
+    end.
 
 %%cFunctionWrapper(T, S = #state{continuationState = {F, CS}}) ->
   %%{Data, CS2} = F(CS),
@@ -248,7 +249,7 @@ scan2(Xml, State, Options) ->
     {error, Message} -> {error, Message};
     {'EXIT', Message} -> throw({'EXIT', Message});
     {ok, Structure, Tail} -> 
-          lager:debug("_251:~n\t~p~n\t~p",[Structure,Tail]),
+          lager:debug("_252:~n\t~p",[Structure]),
           {ok, Structure, Tail}
   end.
 

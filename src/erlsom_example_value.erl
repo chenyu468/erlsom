@@ -1,4 +1,5 @@
 -module(erlsom_example_value).
+-compile([{parse_transform, lager_transform}]).
 
 %% output code that makes an example value for a type, using an erlsom model as input.
 %%
@@ -59,12 +60,24 @@ from_model(Type, Model, Options) ->
   from_type(Type, Model, State).
 
 from_type(Type, #model{tps = Types} = Model, State) ->
-  case lists:keyfind(Type, #type.nm, Types) of
-    false ->
-      throw({error, "Type not found", Type});
-    Value ->
-      from_type2(Value, Model, State)
-  end.
+    lager:debug("_62:~n\t~p~n\t~p~n\t~p",[Type,#type.nm,Types]),
+    lager:debug("_64:~n\t~p~n\t~p",[#type.tp,#type.els]),
+    B = case Type of
+            "" ->
+                Type;
+            _ ->
+                A = case lists:keyfind(Type, #type.nm, Types) of
+                        false ->
+                            throw({error, "Type not found", Type});
+                        Value ->
+                            from_type2(Value, Model, State)
+                    end,
+                lager:debug("_71:~n\t~p",[A]),
+                A
+        end,
+    B.
+    
+
 
 from_type2(#type{nm = Name, els = Elements, atts = Attributes}, 
           #model{any_attribs = AnyAtts} = Model, State) ->
